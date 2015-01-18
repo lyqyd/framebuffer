@@ -1,5 +1,5 @@
-function new(_sizeX, _sizeY, _color)
-	local redirect = {buffer = {text = {}, textColor = {}, backColor = {}, cursorX = 1, cursorY = 1, cursorBlink = false, curTextColor = "0", curBackColor = "f", sizeX = _sizeX or 51, sizeY = _sizeY or 19, color = _color}}
+function new(_sizeX, _sizeY, _color, _xOffset, _yOffset)
+	local redirect = {buffer = {text = {}, textColor = {}, backColor = {}, cursorX = 1, cursorY = 1, cursorBlink = false, curTextColor = "0", curBackColor = "f", sizeX = _sizeX or 51, sizeY = _sizeY or 19, color = _color, xOffset = _xOffset, yOffset = _yOffset}}
 	redirect.write = function(text)
 		text = tostring(text)
 		local pos = redirect.buffer.cursorX
@@ -130,8 +130,12 @@ function new(_sizeX, _sizeY, _color)
 end
 
 function draw(buffer, current)
-	for i=1, buffer.sizeY do
-		term.setCursorPos(1,i)
+	for i = 1, buffer.sizeY do
+		if buffer.yOffset and buffer.xOffset then
+			term.setCursorPos(buffer.xOffset, i + buffer.yOffset - 1)
+		else
+			term.setCursorPos(1,i)
+		end
 		if (current and (buffer.text[i] ~= current.text[i] or buffer.textColor[i] ~= current.textColor[i] or buffer.backColor[i] ~= current.backColor[i])) or not current then
 			local lineEnd = false
 			local offset = 1
@@ -151,7 +155,11 @@ function draw(buffer, current)
 			end
 		end
 	end
-	term.setCursorPos(buffer.cursorX, buffer.cursorY)
+	if buffer.xOffset and buffer.yOffset then
+		term.setCursorPos(buffer.cursorX + buffer.xOffset - 1, buffer.cursorY + buffer.yOffset - 1)
+	else
+		term.setCursorPos(buffer.cursorX, buffer.cursorY)
+	end
 	term.setTextColor(2 ^ tonumber(buffer.curTextColor, 16))
 	term.setBackgroundColor(2 ^ tonumber(buffer.curBackColor, 16))
 	term.setCursorBlink(buffer.cursorBlink)
