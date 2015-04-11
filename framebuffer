@@ -1,20 +1,23 @@
 function new(_sizeX, _sizeY, _color, _xOffset, _yOffset)
 	local redirect = {buffer = {text = {}, textColor = {}, backColor = {}, cursorX = 1, cursorY = 1, cursorBlink = false, curTextColor = "0", curBackColor = "f", sizeX = _sizeX or 51, sizeY = _sizeY or 19, color = _color, xOffset = _xOffset or 0, yOffset = _yOffset or 0}}
 	redirect.write = function(text)
-		text = tostring(text)
+	local function doWrite(text, textColor, backColor)
 		local pos = redirect.buffer.cursorX
 		if redirect.buffer.cursorY > redirect.buffer.sizeY or redirect.buffer.cursorY < 1 then
 			redirect.buffer.cursorX = pos + #text
 			return
 		end
-		local writeText
+		local writeText, writeTC, writeBC
 		if pos + #text <= 1 then
 			--skip entirely.
 			redirect.buffer.cursorX = pos + #text
 			return
 		elseif pos < 1 then
 			--adjust text to fit on screen starting at one.
-			writeText = string.sub(text, math.abs(redirect.buffer.cursorX) + 2)
+			local len = math.abs(redirect.buffer.cursorX) + 2
+			writeText = string.sub(text, len)
+			writeTC = string.sub(textColor, len)
+			writeBC = string.sub(backColor, len)
 			redirect.buffer.cursorX = 1
 		elseif pos > redirect.buffer.sizeX then
 			--if we're off the edge to the right, skip entirely.
@@ -22,6 +25,8 @@ function new(_sizeX, _sizeY, _color, _xOffset, _yOffset)
 			return
 		else
 			writeText = text
+			writeTC = textColor
+			writeBC = backColor
 		end
 		local lineText = redirect.buffer.text[redirect.buffer.cursorY]
 		local lineColor = redirect.buffer.textColor[redirect.buffer.cursorY]
@@ -31,9 +36,22 @@ function new(_sizeX, _sizeY, _color, _xOffset, _yOffset)
 		local postStart = redirect.buffer.cursorX + string.len(writeText)
 		local postStop = redirect.buffer.sizeX
 		redirect.buffer.text[redirect.buffer.cursorY] = string.sub(lineText, preStart, preStop)..writeText..string.sub(lineText, postStart, postStop)
-		redirect.buffer.textColor[redirect.buffer.cursorY] = string.sub(lineColor, preStart, preStop)..string.rep(redirect.buffer.curTextColor, #writeText)..string.sub(lineColor, postStart, postStop)
-		redirect.buffer.backColor[redirect.buffer.cursorY] = string.sub(lineBack, preStart, preStop)..string.rep(redirect.buffer.curBackColor, #writeText)..string.sub(lineBack, postStart, postStop)
+		redirect.buffer.textColor[redirect.buffer.cursorY] = string.sub(lineColor, preStart, preStop)..writeTC..string.sub(lineColor, postStart, postStop)
+		redirect.buffer.backColor[redirect.buffer.cursorY] = string.sub(lineBack, preStart, preStop)..writeBC..string.sub(lineBack, postStart, postStop)
 		redirect.buffer.cursorX = pos + string.len(text)
+	end
+	redirect.write = function(text)
+		local text = tostring(text)
+		doWrite(text, string.rep(redirect.buffer.curTextColor, #text), string.rep(redirect.buffer.curBackColor, #text))
+	end
+	redirect.blit = function(text, textColor, backColor)
+		if type(text) ~= "string" or type(textColor) ~= "string" or type(backColor) ~= "string" then
+			error("Expected string, string, string", 2)
+		end
+		if #textColor ~= #text or #backColor ~= #text then
+			error("Arguments must be the same length", 2)
+		end
+		doWrite(text, textColor, backColor)
 	end
 	redirect.clear = function()
 		for i=1, redirect.buffer.sizeY do
@@ -90,6 +108,10 @@ function new(_sizeX, _sizeY, _color, _xOffset, _yOffset)
 			end
 		end
 	end
+	redirect.getTextColor = function()
+		return 2 ^ tonumber(redirect.buffer.curTextColor, 16)
+	end
+	redirect.getTextColour = redirect.getTextColor
 	redirect.setTextColor = function(clr)
 		if clr and clr <= 32768 and clr >= 1 then
 			if redirect.buffer.color then
@@ -102,6 +124,10 @@ function new(_sizeX, _sizeY, _color, _xOffset, _yOffset)
 		end
 	end
 	redirect.setTextColour = redirect.setTextColor
+	redirect.getBackgroundColor = function()
+		return 2 ^ tonumber(redirect.buffer.curBackColor, 16)
+	end
+	redirect.getBackgroundColour = redirect.getBackgroundColor
 	redirect.setBackgroundColor = function(clr)
 		if clr and clr <= 32768 and clr >= 1 then
 			if redirect.buffer.color then
