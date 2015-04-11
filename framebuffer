@@ -1,6 +1,5 @@
 function new(_sizeX, _sizeY, _color, _xOffset, _yOffset)
 	local redirect = {buffer = {text = {}, textColor = {}, backColor = {}, cursorX = 1, cursorY = 1, cursorBlink = false, curTextColor = "0", curBackColor = "f", sizeX = _sizeX or 51, sizeY = _sizeY or 19, color = _color, xOffset = _xOffset or 0, yOffset = _yOffset or 0}}
-	redirect.write = function(text)
 	local function doWrite(text, textColor, backColor)
 		local pos = redirect.buffer.cursorX
 		if redirect.buffer.cursorY > redirect.buffer.sizeY or redirect.buffer.cursorY < 1 then
