@@ -165,17 +165,21 @@ function draw(buffer, current)
 	for i = buffer.minY, buffer.maxY do
 		term.setCursorPos(buffer.minX + buffer.xOffset, i + buffer.yOffset)
 		if (current and (buffer.text[i] ~= current.text[i] or buffer.textColor[i] ~= current.textColor[i] or buffer.backColor[i] ~= current.backColor[i])) or not current then
-			local lineEnd = false
-			local offset = buffer.minX
-			while not lineEnd do
-				local limit = buffer.maxX - offset + 1
-				local textColorString = string.match(string.sub(buffer.textColor[i], offset), string.sub(buffer.textColor[i], offset, offset).."*")
-				local backColorString = string.match(string.sub(buffer.backColor[i], offset), string.sub(buffer.backColor[i], offset, offset).."*")
-				term.setTextColor(2 ^ tonumber(string.sub(textColorString, 1, 1), 16))
-				term.setBackgroundColor(2 ^ tonumber(string.sub(backColorString, 1, 1), 16))
-				term.write(string.sub(buffer.text[i], offset, offset + math.min(#textColorString, #backColorString, limit) - 1))
-				offset = offset + math.min(#textColorString, #backColorString, limit)
-				if offset > buffer.maxX then lineEnd = true end
+			if term.blit then
+				term.blit(buffer.text[i], buffer.textColor[i], buffer.backColor[i])
+			else
+				local lineEnd = false
+				local offset = buffer.minX
+				while not lineEnd do
+					local limit = buffer.maxX - offset + 1
+					local textColorString = string.match(string.sub(buffer.textColor[i], offset), string.sub(buffer.textColor[i], offset, offset).."*")
+					local backColorString = string.match(string.sub(buffer.backColor[i], offset), string.sub(buffer.backColor[i], offset, offset).."*")
+					term.setTextColor(2 ^ tonumber(string.sub(textColorString, 1, 1), 16))
+					term.setBackgroundColor(2 ^ tonumber(string.sub(backColorString, 1, 1), 16))
+					term.write(string.sub(buffer.text[i], offset, offset + math.min(#textColorString, #backColorString, limit) - 1))
+					offset = offset + math.min(#textColorString, #backColorString, limit)
+					if offset > buffer.maxX then lineEnd = true end
+				end
 			end
 			if current then
 				current.text[i] = buffer.text[i]
